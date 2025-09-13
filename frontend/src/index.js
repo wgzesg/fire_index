@@ -5,7 +5,7 @@ const { EventCollection } = require('./stock_data_pb');
 
 import PortfolioConfigForm from './PortfolioConfigForm';
 import PortfolioDisplay from './PortfolioDisplay';
-import computePortfolioPerformance from './ComputationLogic';
+import computePortfolioPerformance from './computation';
 
 const ALL_STOCKS = [
     { name: "DBS", ticker: "D05.SI" },
@@ -57,7 +57,6 @@ const App = () => {
     const handleFormSubmit = (config) => {
         setPortfolioConfig(config);
         setShowInputForm(false); // Hide form after submission
-        // Trigger computation here
         const result = computePortfolioPerformance(config, portfolioEvents);
         setComputedData(result);
     };
