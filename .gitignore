@@ -1,0 +1,27 @@
+
+# Node.js
+node_modules/
+dist/
+# package-lock.json # Uncomment if you want to ignore package-lock.json
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+uv.lock
+
+# Protobuf generated files
+data_collection/models/stock_data_pb2.py
+data_collection/models/stock_data_pb2_grpc.py
+frontend/src/stock_data_pb.js
+
+# Data files
+stock_data.bin
+
+# macOS
+.DS_Store
+
+# VSCode
+.vscode/
