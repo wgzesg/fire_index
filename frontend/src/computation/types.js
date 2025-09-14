@@ -28,3 +28,5 @@
  * @property {number} totalDividendsReceived
  * @property {number} totalInvested
  */
+
+
