@@ -12,14 +12,6 @@ __pycache__/
 *.pyd
 uv.lock
 
-# Protobuf generated files
-data_collection/models/stock_data_pb2.py
-data_collection/models/stock_data_pb2_grpc.py
-frontend/src/stock_data_pb.js
-
-# Data files
-stock_data.bin
-
 # macOS
 .DS_Store
 
