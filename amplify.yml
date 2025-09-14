@@ -1,15 +1,18 @@
 version: 1
 applications:
   - appRoot: frontend
-    platform: web
-    framework: react
-    buildPath: /
-    baseDirectory: build
-    name: fire-index
-    phases:
-      build:
-        commands:
-          - npm run build
-      postBuild:
-        commands:
-          - echo "React app build complete"
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm ci # or npm install if you prefer
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: dist # or "build", depends on webpack.config.js output
+        files:
+          - "**/*"
+      cache:
+        paths:
+          - node_modules/**/*
