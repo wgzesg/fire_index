@@ -14,7 +14,7 @@ const computePortfolioPerformance = (config, events) => {
   console.log("Starting portfolio performance computation...");
   console.log("Configuration:", config);
 
-  const eventHandler = new DefaultPortfolioEventStrategy(config.monthlyInvestment);
+  const eventHandler = new DefaultPortfolioEventStrategy(config.monthlyInvestment, config.selectedStocks);
 
   // 1. Filter relevant events based on selected stocks and date range
   const filteredEvents = events.filter(event => {
@@ -28,8 +28,6 @@ const computePortfolioPerformance = (config, events) => {
   filteredEvents.sort((a, b) => {
     return (a.eventDate.seconds - b.eventDate.seconds) || (a.eventDate.nanos - b.eventDate.nanos);
   });
-
-  console.log(filteredEvents);
 
   // Initialize portfolio
   let portfolio = new Portfolio();
@@ -51,20 +49,21 @@ const computePortfolioPerformance = (config, events) => {
   };
 
   while (currentMonth <= config.endDate) {
+    console.log(currentMonth)
     let monthlyDividends = 0;
 
     let nextPortfolio = portfolio.clone();
     nextPortfolio.totalInvested += config.monthlyInvestment;
+    nextPortfolio.cash += config.monthlyInvestment;
 
     const eventsInMonth = filteredEvents.filter(event =>
       new Date(event.eventDate.seconds * 1000).toISOString().substring(0, 7) === currentMonth
     );
-    const priceEvents = eventsInMonth.filter(e => e.stock_price);
-    nextPortfolio = eventHandler.handlePriceEvent({
-      events: priceEvents,
-      nextPortfolio
-    }, nextPortfolio);
+    const priceEvents = eventsInMonth.filter(e => e.stockPrice);
 
+    nextPortfolio = eventHandler.handlePriceEvent({
+      events: priceEvents
+    }, nextPortfolio);
 
     // Process events for the current month
     const dividendEvents = eventsInMonth.filter(e => e.dividend);
@@ -74,7 +73,6 @@ const computePortfolioPerformance = (config, events) => {
 
     const bonusShareEvents = eventsInMonth.filter(e => e.bonus_share);
     nextPortfolio = eventHandler.handleBonusShare(bonusShareEvents, nextPortfolio);
-
     portfolio = nextPortfolio;
 
     // Update prices for all holdings to the latest known at month end for snapshot

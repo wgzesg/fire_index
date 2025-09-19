@@ -2,6 +2,8 @@ import { Portfolio } from "./Portfolio";
 import './types.js';
 import './types/event.js';
 
+
+
 /**
  * Interface for handling portfolio events.
  * Different strategies can be implemented by extending this class.
@@ -44,59 +46,84 @@ export class PortfolioEventStrategy {
 export class DefaultPortfolioEventStrategy extends PortfolioEventStrategy {
   /**
    * @param {number} monthlyInvestment
+   * @param {SelectedStock[]} selectedStocks
    */
-  constructor(monthlyInvestment) {
+  constructor(monthlyInvestment, selectedStocks) {
     super();
     this.monthlyInvestment = monthlyInvestment;
+    this.selectedStocks = new Map(selectedStocks.map(s => [s.ticker, s]));
   }
 
   /**
    * @override
    */
-  handlePriceEvent(events, portfolio) {
+  handlePriceEvent({ events }, portfolio) {
     const newPortfolio = portfolio.clone();
-    let moneySpent = 0;
 
-    const stockPrices = {};
-    selectedStocks.forEach(stock => {
-      const latestPriceEvent = events.slice().reverse().find(e =>
-        e.ticker === stock.ticker && e.stock_price
-      );
-      if (latestPriceEvent && latestPriceEvent.stock_price) {
-        stockPrices[stock.ticker] = latestPriceEvent.stock_price.close;
+    const latestPrices = {};
+    events.forEach(event => {
+      if (event.stockPrice) {
+        latestPrices[event.ticker] = event.stockPrice.open;
       }
     });
 
-    selectedStocks.forEach(stock => {
-      const price = stockPrices[stock.ticker];
-      if (!price || price <= 0) return;
+    newPortfolio.updateHoldingPrices(latestPrices);
+    const totalPortfolioValue = newPortfolio.calculateTotalValue();
 
-      const allocation = this.monthlyInvestment * (stock.ratio / 100);
-      const costPerUnit = price;
+    const currentValues = {};
+    const expectedValues = {};
+    for (const ticker in newPortfolio.holdings) {
+      const holding = newPortfolio.holdings[ticker];
+      const currentValue = holding.shares * (latestPrices[ticker] || holding.currentPrice);
+      currentValues[ticker] = currentValue;
 
-      if (costPerUnit > 0) {
-        const numUnitsToBuy = Math.floor(allocation / costPerUnit);
-
-        if (numUnitsToBuy > 0) {
-          const cost = numUnitsToBuy * costPerUnit;
-
-          const stockHoldings = newPortfolio.holdings[stock.ticker];
-          const currentTotalValue = stockHoldings.shares * stockHoldings.averageCost;
-          const newTotalValue = currentTotalValue + cost;
-          const newTotalShares = stockHoldings.shares + (numUnitsToBuy * 100);
-
-          stockHoldings.averageCost = newTotalShares > 0 ? newTotalValue / newTotalShares : 0;
-          stockHoldings.shares = newTotalShares;
-          stockHoldings.currentPrice = price;
-
-          moneySpent += cost;
-        }
+      const selectedStock = this.selectedStocks.get(ticker);
+      if (selectedStock) {
+        const expectedValue = (selectedStock.ratio / 100) * totalPortfolioValue;
+        expectedValues[ticker] = expectedValue;
       }
-    });
+    }
 
-    const cashFromInvestment = this.monthlyInvestment - moneySpent;
-    newPortfolio.cash += cashFromInvestment;
+    const investmentAllocation = {};
+    for (const ticker in currentValues) {
+      const investmentNeeded = Math.max(0, expectedValues[ticker] - currentValues[ticker]);
+      if (investmentNeeded > 0) {
+        investmentAllocation[ticker] = investmentNeeded;
+      }
+    }
 
+    const sortedInvestmentAllocation = Object.entries(investmentAllocation).sort(([, a], [, b]) => b - a);
+
+    let remainingCash = newPortfolio.cash;
+
+    for (const [ticker, investmentNeeded] of sortedInvestmentAllocation) {
+      const price = latestPrices[ticker];
+      if (!price || price <= 0) continue;
+
+      const costPerLot = price * 100;
+      if (remainingCash < costPerLot) {
+        continue;
+      }
+
+      const numLotsToBuy = Math.floor(Math.min(remainingCash, investmentNeeded) / costPerLot);
+
+      if (numLotsToBuy > 0) {
+        const cost = numLotsToBuy * costPerLot;
+
+        const stockHoldings = newPortfolio.holdings[ticker];
+        const currentTotalValue = stockHoldings.shares * stockHoldings.averageCost;
+        const newTotalValue = currentTotalValue + cost;
+        const newTotalShares = stockHoldings.shares + (numLotsToBuy * 100);
+
+        stockHoldings.averageCost = newTotalShares > 0 ? newTotalValue / newTotalShares : 0;
+        stockHoldings.shares = newTotalShares;
+        stockHoldings.currentPrice = price;
+
+        remainingCash -= cost;
+      }
+    }
+
+    newPortfolio.cash = remainingCash;
     return newPortfolio;
   }
 
@@ -111,8 +138,7 @@ export class DefaultPortfolioEventStrategy extends PortfolioEventStrategy {
       if (!stockHoldings || stockHoldings.shares === 0) {
         return;
       }
-
-      const dividendAmount = stockHoldings.shares * event.dividend.amount_per_share;
+      const dividendAmount = stockHoldings.shares * event.dividend.amountPerShare;
       newPortfolio.cash += dividendAmount;
       newPortfolio.totalDividendsReceived += dividendAmount;
     });
@@ -128,6 +154,7 @@ export class DefaultPortfolioEventStrategy extends PortfolioEventStrategy {
     events.forEach(event => {
       const stockHoldings = newPortfolio.holdings[event.ticker];
       if (!stockHoldings) return;
+      console.log("bonus stock event", event)
 
       stockHoldings.shares *= event.bonus_share.shares_per_share_owned;
     });
