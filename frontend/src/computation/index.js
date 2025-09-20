@@ -35,6 +35,8 @@ const computePortfolioPerformance = (config, events) => {
 
   /** @type {MonthlySnapshot[]} */
   const monthlySnapshots = [];
+  const monthlyDividendsQueue = []; // Queue for the last 12 monthly dividends
+  let yearlyDividend = 0; // Running sum of the queue
 
   let currentMonth = config.startDate; // YYYY-MM
 
@@ -71,6 +73,14 @@ const computePortfolioPerformance = (config, events) => {
     nextPortfolio = eventHandler.handleDividend(dividendEvents, nextPortfolio);
     monthlyDividends += nextPortfolio.totalDividendsReceived - portfolioBeforeDividend.totalDividendsReceived;
 
+    // Update dividend queue and yearly dividend sum
+    monthlyDividendsQueue.push(monthlyDividends);
+    yearlyDividend += monthlyDividends;
+    if (monthlyDividendsQueue.length > 12) {
+      const oldestDividend = monthlyDividendsQueue.shift(); // remove the oldest
+      yearlyDividend -= oldestDividend;
+    }
+
     const bonusShareEvents = eventsInMonth.filter(e => e.bonus_share);
     nextPortfolio = eventHandler.handleBonusShare(bonusShareEvents, nextPortfolio);
     portfolio = nextPortfolio;
@@ -88,6 +98,8 @@ const computePortfolioPerformance = (config, events) => {
       }
     }
 
+    const yearlyDividendRate = snapshotPortfolio.totalInvested > 0 ? (yearlyDividend / snapshotPortfolio.totalInvested) * 100 : 0;
+
     // Take monthly snapshot
     monthlySnapshots.push({
       date: currentMonth,
@@ -95,20 +107,25 @@ const computePortfolioPerformance = (config, events) => {
       monthlyPassiveIncome: monthlyDividends,
       totalDividendsReceived: snapshotPortfolio.totalDividendsReceived,
       totalInvested: snapshotPortfolio.totalInvested,
+      yearlyDividend,
+      yearlyDividendRate,
     });
 
     currentMonth = getNextMonth(currentMonth);
   }
 
   const finalTotalPortfolioValue = monthlySnapshots.length > 0 ? monthlySnapshots[monthlySnapshots.length - 1].totalPortfolioValue : 0;
-  const finalTotalInvested = portfolio.totalInvested;
   const finalTotalDividends = portfolio.totalDividendsReceived;
+  const latestYearlyDividend = monthlySnapshots.length > 0 ? monthlySnapshots[monthlySnapshots.length - 1].yearlyDividend : 0;
+  const latestYearlyDividendRate = monthlySnapshots.length > 0 ? monthlySnapshots[monthlySnapshots.length - 1].yearlyDividendRate : 0;
 
   return {
     chartData: monthlySnapshots.map(s => ({ date: s.date, value: s.totalPortfolioValue })),
-    dividendYield: finalTotalInvested > 0 ? (finalTotalDividends / finalTotalInvested) * 100 : 0,
+    totalDividendsReceived: finalTotalDividends,
     totalAssetValue: finalTotalPortfolioValue,
     monthlySnapshots: monthlySnapshots,
+    yearlyDividend: latestYearlyDividend,
+    yearlyDividendRate: latestYearlyDividendRate,
   };
 };
 
