@@ -22,7 +22,7 @@ def main():
 
     for company, ticker in STOCKS.items():
         print(f"Fetching events for {company} ({ticker})...")
-        events = get_stock_events(ticker)
+        events = get_stock_events(ticker, years=10)
 
         if events:
             collection.events.extend(events)
