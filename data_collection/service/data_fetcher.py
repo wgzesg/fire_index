@@ -22,7 +22,7 @@ def get_stock_events(ticker: str, years: int = 3) -> list[Event]:
     events = []
 
     # Fetch monthly stock prices
-    hist = stock.history(start=start_date, end=end_date, interval="1mo")
+    hist = stock.history(start=start_date, end=end_date, interval="1mo", auto_adjust=False)
     for index, row in hist.iterrows():
         ts = Timestamp()
         ts.FromDatetime(index)
