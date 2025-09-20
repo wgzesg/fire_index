@@ -32,7 +32,7 @@ const PortfolioDisplay = ({ computedPortfolioData }) => {
     );
   }
 
-  const { totalAssetValue, totalDividendsReceived, monthlySnapshots, yearlyDividend, yearlyDividendRate } = computedPortfolioData;
+  const { totalAssetValue, totalDividendsReceived, monthlySnapshots, yearlyDividend, yearlyDividendRate, totalInvestmentYield } = computedPortfolioData;
 
   return (
     <div style={{ marginTop: '20px', padding: '20px', border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
@@ -71,16 +71,10 @@ const PortfolioDisplay = ({ computedPortfolioData }) => {
           <h3 style={{ margin: 0, color: '#333' }}>Yearly Dividend Rate:</h3>
           <p style={{ fontSize: '1.1em', fontWeight: 'bold' }}>{yearlyDividendRate.toFixed(2)}%</p>
         </div>
-      </div>
-
-      <h3 style={{ color: '#333', textAlign: 'center', marginTop: '20px' }}>Filtered Events</h3>
-      <div style={{ maxHeight: '300px', overflowY: 'scroll', border: '1px solid #eee', padding: '10px', borderRadius: '4px', width: '90%', margin: '20px auto' }}>
-        {monthlySnapshots.length > 0 ? monthlySnapshots.map((event, index) => (
-          <div key={index} style={{ marginBottom: '10px', padding: '8px', borderBottom: '1px dotted #eee' }}>
-            <strong>{event.date}</strong> -
-            Total Value: ${event.totalPortfolioValue.toFixed(2)}
-          </div>
-        )) : <p style={{ textAlign: 'center' }}>No events match your criteria.</p>}
+        <div style={{ textAlign: 'center' }}>
+          <h3 style={{ margin: 0, color: '#333' }}>Total Investment Yield:</h3>
+          <p style={{ fontSize: '1.1em', fontWeight: 'bold' }}>{totalInvestmentYield.toFixed(2)}%</p>
+        </div>
       </div>
     </div>
   );

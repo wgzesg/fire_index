@@ -115,9 +115,11 @@ const computePortfolioPerformance = (config, events) => {
   }
 
   const finalTotalPortfolioValue = monthlySnapshots.length > 0 ? monthlySnapshots[monthlySnapshots.length - 1].totalPortfolioValue : 0;
+  const finalTotalInvested = portfolio.totalInvested;
   const finalTotalDividends = portfolio.totalDividendsReceived;
   const latestYearlyDividend = monthlySnapshots.length > 0 ? monthlySnapshots[monthlySnapshots.length - 1].yearlyDividend : 0;
   const latestYearlyDividendRate = monthlySnapshots.length > 0 ? monthlySnapshots[monthlySnapshots.length - 1].yearlyDividendRate : 0;
+  const totalInvestmentYield = finalTotalInvested > 0 ? ((finalTotalPortfolioValue / finalTotalInvested) - 1) * 100 : 0;
 
   return {
     chartData: monthlySnapshots.map(s => ({ date: s.date, value: s.totalPortfolioValue })),
@@ -126,6 +128,7 @@ const computePortfolioPerformance = (config, events) => {
     monthlySnapshots: monthlySnapshots,
     yearlyDividend: latestYearlyDividend,
     yearlyDividendRate: latestYearlyDividendRate,
+    totalInvestmentYield,
   };
 };
 
