@@ -33,7 +33,7 @@ const PortfolioComparisonPanel = ({ computedPortfolios, onDelete }) => {
   };
 
   return (
-    <div style={{ border: '1px solid #eee', borderRadius: '8px', padding: '15px', backgroundColor: '#f9f9f9', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ border: '1px solid #eee', borderRadius: '8px', padding: '15px', backgroundColor: '#f9f9f9', display: 'flex', flexDirection: 'column' }}>
       <h3 style={{ marginTop: 0, color: '#333', textAlign: 'center', flexShrink: 0 }}>Strategy Comparison</h3>
       <div style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>

@@ -53,9 +53,9 @@ const App = () => {
         setDiagramHeight(diagramRef.current.offsetHeight);
       }
     };
-  
+
     measureHeight();
-  
+
     window.addEventListener('resize', measureHeight);
     return () => window.removeEventListener('resize', measureHeight);
   }, [computedPortfolios]); // Re-measure when content changes
@@ -87,7 +87,7 @@ const App = () => {
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '1600px', margin: '20px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
       <h1 style={{ textAlign: 'center', color: '#333', marginBottom: '20px' }}>Portfolio Performance Analyzer</h1>
-      
+
       <div style={{ marginBottom: '20px', border: '1px solid #eee', borderRadius: '8px', padding: '15px', backgroundColor: '#f9f9f9' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => setShowInputForm(!showInputForm)}>
           <h2 style={{ margin: 0, color: '#555', fontSize: '1.2em' }}>
@@ -105,16 +105,11 @@ const App = () => {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
-        <div style={{ flex: '2' }} ref={diagramRef}>
+        <div style={{ flex: '5' }} ref={diagramRef}>
           <PortfolioDisplay computedPortfolios={computedPortfolios} />
         </div>
         {computedPortfolios.length > 0 && (
-          <div style={{
-            flex: '1',
-            height: diagramHeight > 0 ? `${diagramHeight}px` : 'auto',
-            transition: 'opacity 0.5s ease-in-out',
-            opacity: panelVisible ? 1 : 0
-          }}>
+          <div style={{ flex: '1' }}>
             <PortfolioComparisonPanel computedPortfolios={computedPortfolios} onDelete={handleDeletePortfolio} />
           </div>
         )}
