@@ -9,6 +9,8 @@ STOCKS = {
     "Mapletree Logistics Trust": "M44U.SI",
     "Keppel": "BN4.SI",
     "Keppel Infra Trust": "A7RU.SI",
+    "Invesco QQQ Trust": "QQQ",
+    "SPDR S&P 500 ETF Trust": "SPY",
 }
 
 OUTPUT_FILE = "../frontend/public/stock_data.bin"

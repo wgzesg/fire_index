@@ -99,8 +99,10 @@ export class DefaultPortfolioEventStrategy extends PortfolioEventStrategy {
     for (const [ticker, investmentNeeded] of sortedInvestmentAllocation) {
       const price = latestPrices[ticker];
       if (!price || price <= 0) continue;
+      const selectedStock = this.selectedStocks.get(ticker);
+      const sharesPerUnit = selectedStock.sharesPerUnit || 1;
+      const costPerLot = price * sharesPerUnit;
 
-      const costPerLot = price * 100;
       if (remainingCash < costPerLot) {
         continue;
       }
@@ -113,7 +115,7 @@ export class DefaultPortfolioEventStrategy extends PortfolioEventStrategy {
         const stockHoldings = newPortfolio.holdings[ticker];
         const currentTotalValue = stockHoldings.shares * stockHoldings.averageCost;
         const newTotalValue = currentTotalValue + cost;
-        const newTotalShares = stockHoldings.shares + (numLotsToBuy * 100);
+        const newTotalShares = stockHoldings.shares + (numLotsToBuy * sharesPerUnit);
 
         stockHoldings.averageCost = newTotalShares > 0 ? newTotalValue / newTotalShares : 0;
         stockHoldings.shares = newTotalShares;

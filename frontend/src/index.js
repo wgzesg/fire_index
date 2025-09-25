@@ -1,34 +1,28 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 const { EventCollection } = require('./stock_data_pb');
 
 import PortfolioConfigForm from './PortfolioConfigForm';
 import PortfolioDisplay from './PortfolioDisplay';
+import PortfolioComparisonPanel from './PortfolioComparisonPanel';
 import computePortfolioPerformance from './computation';
-
-const ALL_STOCKS = [
-  { name: "DBS", ticker: "D05.SI" },
-  { name: "SIA", ticker: "C6L.SI" },
-  { name: "SATS", ticker: "S58.SI" },
-  { name: "Mapletree Industrial Trust", ticker: "ME8U.SI" },
-  { name: "Mapletree Logistics Trust", ticker: "M44U.SI" },
-  { name: "Keppel", ticker: "BN4.SI" },
-  { name: "Keppel Infra Trust", ticker: "A7RU.SI" },
-];
 
 const DEFAULT_INVESTMENT_AMOUNTS = [100, 500, 1000];
 
 const App = () => {
   const [portfolioEvents, setPortfolioEvents] = useState([]);
-  const [showInputForm, setShowInputForm] = useState(true); // State to toggle form visibility
+  const [showInputForm, setShowInputForm] = useState(true);
   const [portfolioConfig, setPortfolioConfig] = useState({
     selectedStocks: [],
     startDate: '',
     endDate: '',
     monthlyInvestment: DEFAULT_INVESTMENT_AMOUNTS[0],
   });
-  const [computedData, setComputedData] = useState(null);
+  const [computedPortfolios, setComputedPortfolios] = useState([]);
+  const [panelVisible, setPanelVisible] = useState(false);
+  const diagramRef = useRef(null);
+  const [diagramHeight, setDiagramHeight] = useState(0);
 
   useEffect(() => {
     fetch('./stock_data.bin')
@@ -40,7 +34,6 @@ const App = () => {
         });
         setPortfolioEvents(sortedEvents);
 
-        // Set default start and end dates based on available data
         if (sortedEvents.length > 0) {
           const firstDate = new Date(sortedEvents[0].eventDate.seconds * 1000);
           const lastDate = new Date(sortedEvents[sortedEvents.length - 1].eventDate.seconds * 1000);
@@ -54,18 +47,47 @@ const App = () => {
       .catch(error => console.error('Error fetching or parsing stock data:', error));
   }, []);
 
+  useLayoutEffect(() => {
+    const measureHeight = () => {
+      if (diagramRef.current) {
+        setDiagramHeight(diagramRef.current.offsetHeight);
+      }
+    };
+  
+    measureHeight();
+  
+    window.addEventListener('resize', measureHeight);
+    return () => window.removeEventListener('resize', measureHeight);
+  }, [computedPortfolios]); // Re-measure when content changes
+
+  useEffect(() => {
+    if (computedPortfolios.length > 0) {
+      const timer = setTimeout(() => setPanelVisible(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      setPanelVisible(false);
+    }
+  }, [computedPortfolios.length]);
+
   const handleFormSubmit = (config) => {
-    setPortfolioConfig(config);
-    setShowInputForm(false); // Hide form after submission
     const result = computePortfolioPerformance(config, portfolioEvents);
-    setComputedData(result);
+    const newPortfolio = {
+      id: Date.now(),
+      config: config,
+      result: result,
+    };
+    setComputedPortfolios(prev => [...prev, newPortfolio]);
+    setShowInputForm(false);
+  };
+
+  const handleDeletePortfolio = (id) => {
+    setComputedPortfolios(prev => prev.filter(p => p.id !== id));
   };
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '1200px', margin: '20px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '1600px', margin: '20px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
       <h1 style={{ textAlign: 'center', color: '#333', marginBottom: '20px' }}>Portfolio Performance Analyzer</h1>
-
-      {/* Top Bar / Collapsible Input Form */}
+      
       <div style={{ marginBottom: '20px', border: '1px solid #eee', borderRadius: '8px', padding: '15px', backgroundColor: '#f9f9f9' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => setShowInputForm(!showInputForm)}>
           <h2 style={{ margin: 0, color: '#555', fontSize: '1.2em' }}>
@@ -73,7 +95,6 @@ const App = () => {
           </h2>
           <span>{showInputForm ? '▲' : '▼'}</span>
         </div>
-
         {showInputForm && (
           <PortfolioConfigForm
             onSubmit={handleFormSubmit}
@@ -83,9 +104,21 @@ const App = () => {
         )}
       </div>
 
-      {/* Main Content Area: Visualization and Key Stats */}
-      <PortfolioDisplay computedPortfolioData={computedData} />
-
+      <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
+        <div style={{ flex: '2' }} ref={diagramRef}>
+          <PortfolioDisplay computedPortfolios={computedPortfolios} />
+        </div>
+        {computedPortfolios.length > 0 && (
+          <div style={{
+            flex: '1',
+            height: diagramHeight > 0 ? `${diagramHeight}px` : 'auto',
+            transition: 'opacity 0.5s ease-in-out',
+            opacity: panelVisible ? 1 : 0
+          }}>
+            <PortfolioComparisonPanel computedPortfolios={computedPortfolios} onDelete={handleDeletePortfolio} />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
